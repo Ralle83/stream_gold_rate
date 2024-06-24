@@ -1,29 +1,8 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Package für die Formatierung der Währung
+import 'package:intl/intl.dart';
 
 class GoldScreen extends StatelessWidget {
   const GoldScreen({super.key});
-
-StreamBuilder(
-            stream: randomNumberStream(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData &&
-                      snapshot.connectionState == ConnectionState.done ||
-                  snapshot.connectionState == ConnectionState.active) {
-                // FALL 1: Future ist komplett und hat Daten!
-                final response = snapshot.data;
-
-                return Text("Die Zahl ist: $response");
-              } else if (snapshot.connectionState != ConnectionState.done) {
-                // FALL 2: Sind noch im Ladezustand
-                return const CircularProgressIndicator();
-              } else {
-                // FALL 3: Es gab nen Fehler
-                return const Icon(Icons.error);
-              }
-            },
-          ),
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -35,18 +14,53 @@ StreamBuilder(
             children: [
               _buildHeader(context),
               const SizedBox(height: 20),
-              Text('Live Kurs:', style: Theme.of(context).textTheme.headlineMedium),
+              Text('Live Kurs:',
+                  style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 20),
+              // Verwendung eines StreamBuilders für den Goldpreis
               StreamBuilder<double>(
                 stream: getGoldPriceStream(),
                 builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Text('Fehler beim Laden des Goldpreises.',
+                        style: TextStyle(color: Colors.red));
+                  }
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  } else if (snapshot.hasError) {
-                    return Text('Error: ${snapshot.error}');
-                  } else if (!snapshot.hasData) {
-                    return const Text('Keine Daten verfügbar');
-                  } else {
-                    double goldPrice = snapshot.data!;
-                    return Text(
-                      NumberFormat.simpleCurrency(locale: 'de_DE').format(gold​⬤
+                    return CircularProgressIndicator();
+                  }
+                  return Text(
+                    NumberFormat.simpleCurrency(locale: 'de_DE')
+                        .format(snapshot.data),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineLarge!
+                        .copyWith(color: Theme.of(context).colorScheme.primary),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Row _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        const Image(
+          image: AssetImage('assets/bars.png'),
+          width: 100,
+        ),
+        Text('Gold', style: Theme.of(context).textTheme.headlineLarge),
+      ],
+    );
+  }
+
+  // Annahme: Diese Funktion liefert einen Stream von Goldpreisen
+  Stream<double> getGoldPriceStream() {
+    // Dies ist ein Beispielstream, der jede Sekunde einen neuen Preis ausgibt
+    return Stream.periodic(Duration(seconds: 1), (x) => (x * 2 + 69.22))
+        .map((x) => x.toDouble());
+  }
+}
